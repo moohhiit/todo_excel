@@ -85,10 +85,10 @@ export function AddColumnModal({ existingNames, availableHeaders, onAdd, onClose
         }}>
           <div>
             <h2 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>
-              Naya Column Add Karein
+               Add Column
             </h2>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
-              Status, Formula, Custom — sab kuch supported
+              Status, Formula, Custom - Available
             </p>
           </div>
           <button onClick={onClose} style={{
@@ -266,7 +266,7 @@ export function AddColumnModal({ existingNames, availableHeaders, onAdd, onClose
               cursor: (!colName.trim() || nameConflict) ? 'not-allowed' : 'pointer',
             }}
           >
-            Column Add Karein
+            Add Column 
           </button>
           <button onClick={onClose} style={{
             padding: '10px 20px', borderRadius: 12, fontSize: 13, cursor: 'pointer',
