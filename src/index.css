@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme variables ──────────────────────────────────────────────────── */
+:root {
+  --brand: #5CE65C;
+  --brand-dark: #3ec43e;
+  --brand-dim: rgba(92, 230, 92, 0.12);
+  --brand-border: rgba(92, 230, 92, 0.35);
+
+  /* Light mode */
+  --bg-page:       #f4f6f9;
+  --bg-header:     #ffffff;
+  --bg-surface:    #ffffff;
+  --bg-surface2:   #f9fafb;
+  --bg-surface3:   #f3f4f6;
+  --bg-hover:      #eff6ff;
+  --bg-sort:       #eff6ff;
+  --bg-even:       #f9fafb;
+  --bg-input:      #ffffff;
+  --bg-modal:      #ffffff;
+  --bg-overlay:    rgba(0,0,0,0.5);
+
+  --border:        #e5e7eb;
+  --border-light:  #f3f4f6;
+  --border-input:  #d1d5db;
+  --border-focus:  #5CE65C;
+
+  --text-primary:  #111827;
+  --text-secondary:#374151;
+  --text-muted:    #6b7280;
+  --text-faint:    #9ca3af;
+  --text-sort:     #1d4ed8;
+  --text-formula:  #7c3aed;
+
+  --badge-bg:      #f3f4f6;
+
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #d1d5db;
+  --scrollbar-hover: #9ca3af;
+}
+
+[data-theme="dark"] {
+  --bg-page:       #020617;
+  --bg-header:     #0a0f1a;
+  --bg-surface:    #0d1424;
+  --bg-surface2:   #0f172a;
+  --bg-surface3:   #1e293b;
+  --bg-hover:      rgba(92,230,92,0.05);
+  --bg-sort:       #1e3a5f;
+  --bg-even:       rgba(255,255,255,0.018);
+  --bg-input:      #1e293b;
+  --bg-modal:      #0d1424;
+  --bg-overlay:    rgba(0,0,0,0.75);
+
+  --border:        #1e293b;
+  --border-light:  #0f172a;
+  --border-input:  #334155;
+  --border-focus:  #5CE65C;
+
+  --text-primary:  #f1f5f9;
+  --text-secondary:#cbd5e1;
+  --text-muted:    #64748b;
+  --text-faint:    #475569;
+  --text-sort:     #93c5fd;
+  --text-formula:  #c4b5fd;
+
+  --badge-bg:      #1e293b;
+
+  --scrollbar-track: #0f172a;
+  --scrollbar-thumb: #1e293b;
+  --scrollbar-hover: #334155;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+
+/* ── Brand button ─────────────────────────────────────────────────────── */
+.btn-brand {
+  background: var(--brand);
+  color: #051405;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-brand:hover  { background: var(--brand-dark); }
+.btn-brand:active { transform: scale(0.97); }
+
+/* ── Table cell input / select ────────────────────────────────────────── */
+.cell-input, .cell-select {
+  width: 100%;
+  padding: 5px 8px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--brand);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+}
+.cell-select { appearance: none; }
+
+/* ── Formula cell ─────────────────────────────────────────────────────── */
+.formula-cell {
+  color: var(--text-formula);
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 11px;
+}
+.formula-err { color: #f87171; font-size: 11px; }
+
+/* ── Virtual scroll container ─────────────────────────────────────────── */
+.vscroll-container {
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Badge base ───────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Light mode badge colours */
+.badge-done        { background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; }
+.badge-inprogress  { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; }
+.badge-pending     { background:#fef9c3; color:#a16207; border:1px solid #fde68a; }
+.badge-cancelled   { background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; }
+.badge-onhold      { background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; }
+.badge-high        { background:#ffedd5; color:#c2410c; border:1px solid #fed7aa; }
+.badge-critical    { background:#fee2e2; color:#7f1d1d; border:1px solid #fca5a5; }
+.badge-medium      { background:#fef9c3; color:#92400e; border:1px solid #fde68a; }
+.badge-low         { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
+
+/* Dark mode badge overrides */
+[data-theme="dark"] .badge-done        { background:#052e16; color:#4ade80; border-color:#14532d; }
+[data-theme="dark"] .badge-inprogress  { background:#1e3a5f; color:#93c5fd; border-color:#1e40af; }
+[data-theme="dark"] .badge-pending     { background:#3b2a00; color:#fcd34d; border-color:#92400e; }
+[data-theme="dark"] .badge-cancelled   { background:#3b0a0a; color:#fca5a5; border-color:#7f1d1d; }
+[data-theme="dark"] .badge-onhold      { background:#1e293b; color:#94a3b8; border-color:#334155; }
+[data-theme="dark"] .badge-high        { background:#431407; color:#fdba74; border-color:#9a3412; }
+[data-theme="dark"] .badge-critical    { background:#450a0a; color:#fca5a5; border-color:#991b1b; }
+[data-theme="dark"] .badge-medium      { background:#3b2a00; color:#fcd34d; border-color:#78350f; }
+[data-theme="dark"] .badge-low         { background:#052e16; color:var(--brand); border-color:#14532d; }
+
+/* ── Transition helpers ───────────────────────────────────────────────── */
+.theme-transition {
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
