@@ -41,7 +41,7 @@ export function AddColumnModal({ existingNames, availableHeaders, onAdd, onClose
       return
     }
     const def = EXTRA_COL_TYPES.find(t => t.id === colType)
-    let options = def?.options ? [...(def.options as string[])] : null
+    let options = def?.options ? [...def.options] as string[] : null
     if (colType === 'custom' && customOpts.trim()) {
       options = customOpts.split(',').map(s => s.trim()).filter(Boolean)
     }
@@ -124,7 +124,7 @@ export function AddColumnModal({ existingNames, availableHeaders, onAdd, onClose
                       {t.label}
                     </div>
                     <div style={{ fontSize: 10, color: 'var(--text-faint)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {t.id === 'formula' ? 'Computed' : t.options ? (t.options as string[]).slice(0, 2).join(', ') + '…' : 'Free text'}
+                      {t.id === 'formula' ? 'Computed' : t.options ? t.options.slice(0, 2).join(', ') + '…' : 'Free text'}
                     </div>
                   </button>
                 )
@@ -242,7 +242,7 @@ export function AddColumnModal({ existingNames, availableHeaders, onAdd, onClose
             <div style={{ padding: 12, borderRadius: 10, background: 'var(--bg-surface2)', border: '1px solid var(--border)' }}>
               <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 8px' }}>Available options:</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {(selectedDef.options as string[]).map(o => (
+                {(selectedDef.options as readonly string[]).map(o => (
                   <span key={o} style={{
                     padding: '2px 10px', borderRadius: 999,
                     background: 'var(--bg-surface3)', border: '1px solid var(--border)',
