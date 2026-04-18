@@ -3,6 +3,7 @@ export interface ExtraColumn {
   type: string
   options: string[] | null
   formula?: string | null
+  whatsappConfig?: WhatsAppConfig | null
 }
 
 export interface DataRow {
@@ -20,14 +21,83 @@ export interface EditCell {
   col: string
 }
 
+export interface WhatsAppConfig {
+  phoneCol: string        // which column holds the phone number
+  message: string         // message template, can use {ColumnName} placeholders
+  defaultCountry: string  // e.g. "91" for India
+}
+
 export const EXTRA_COL_TYPES = [
-  { id: 'status',  label: 'Status',         options: ['Pending', 'In Progress', 'Done', 'Cancelled', 'On Hold'] },
-  { id: 'priority',label: 'Priority',       options: ['Low', 'Medium', 'High', 'Critical'] },
-  { id: 'remark',  label: 'Remark',         options: null },
-  { id: 'assignee',label: 'Assignee',       options: null },
-  { id: 'formula', label: 'Formula Column', options: null },
-  { id: 'custom',  label: 'Custom Column',  options: null },
+  { id: 'status',    label: 'Status',           options: ['Pending', 'In Progress', 'Done', 'Cancelled', 'On Hold'] },
+  { id: 'priority',  label: 'Priority',         options: ['Low', 'Medium', 'High', 'Critical'] },
+  { id: 'remark',    label: 'Remark',           options: null },
+  { id: 'assignee',  label: 'Assignee',         options: null },
+  { id: 'formula',   label: 'Formula Column',   options: null },
+  { id: 'whatsapp',  label: 'WhatsApp Link',    options: null },
+  { id: 'custom',    label: 'Custom Column',    options: null },
 ] as const
+
+// ─── Phone number normaliser ──────────────────────────────────────────────────
+// Rules applied in order:
+//  1. Strip everything except digits and leading +
+//  2. Remove leading 0s after country code (e.g. 0091 → 91, 091 → 91)
+//  3. If number starts with 0 and is 10 digits → prepend defaultCountry
+//  4. If no country code (≤10 digits) → prepend defaultCountry
+//  5. Return digits only (WhatsApp API doesn't want the +)
+
+export function normalisePhone(raw: string, defaultCountry = '91'): { clean: string; warning: string | null } {
+  // Remove all non-digit chars except leading +
+  let s = String(raw ?? '').trim()
+  const hadPlus = s.startsWith('+')
+  s = s.replace(/\D/g, '')   // digits only now
+
+  if (!s) return { clean: '', warning: 'Empty phone number' }
+
+  // Strip leading zeros that often come from Excel formatting
+  // e.g. 00917012345678 → 917012345678
+  if (s.startsWith('00')) s = s.slice(2)
+
+  // If had + and remaining is fine, trust it as international
+  // If number starts with 0 (local format like 09876543210), strip the 0
+  if (!hadPlus && s.startsWith('0') && s.length <= 11) {
+    s = s.slice(1)  // remove leading 0
+  }
+
+  // If still looks local (≤10 digits), prepend country code
+  if (s.length <= 10) {
+    s = defaultCountry + s
+  }
+
+  // Sanity check: international numbers are 7–15 digits
+  if (s.length < 7 || s.length > 15) {
+    return { clean: s, warning: `Unusual length (${s.length} digits)` }
+  }
+
+  return { clean: s, warning: null }
+}
+
+// Build the wa.me link with an interpolated message
+export function buildWhatsAppUrl(
+  row: DataRow,
+  config: WhatsAppConfig,
+  allHeaders: string[]
+): { url: string; phone: string; warning: string | null } {
+  const rawPhone = String(row[config.phoneCol] ?? '')
+  const { clean, warning } = normalisePhone(rawPhone, config.defaultCountry)
+
+  if (!clean) return { url: '', phone: '', warning: 'No phone number' }
+
+  // Replace {ColumnName} placeholders in message
+  let msg = config.message
+  const allCols = allHeaders
+  for (const col of allCols) {
+    const escaped = col.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    msg = msg.replace(new RegExp(`\\{${escaped}\\}`, 'gi'), String(row[col] ?? ''))
+  }
+
+  const url = `https://api.whatsapp.com/send?phone=${clean}&text=${encodeURIComponent(msg)}`
+  return { url, phone: clean, warning }
+}
 
 export const BADGE_COLORS: Record<string, string> = {
   Done:          'badge-done',

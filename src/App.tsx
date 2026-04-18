@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import * as XLSX from 'xlsx'
-import { DataRow, EditCell, ExtraColumn, SortConfig, evaluateFormula } from './types'
+import { DataRow, EditCell, ExtraColumn, SortConfig, evaluateFormula, WhatsAppConfig } from './types'
 import { useTheme } from './ThemeContext'
 import { UploadScreen } from './components/UploadScreen'
 import { ColumnPanel } from './components/ColumnPanel'
@@ -8,6 +8,7 @@ import { FilterBar } from './components/FilterBar'
 import { DataTable } from './components/DataTable'
 import { AddColumnModal } from './components/AddColumnModal'
 import { ThemeToggle } from './components/ThemeToggle'
+import { WhatsAppModal } from './components/WhatsAppModal'
 
 export default function App() {
   const { theme } = useTheme()
@@ -22,6 +23,7 @@ export default function App() {
   const [editVal, setEditVal]         = useState('')
   const [showColPanel, setShowColPanel]   = useState(false)
   const [showAddExtra, setShowAddExtra]   = useState(false)
+  const [showWhatsApp, setShowWhatsApp]   = useState(false)
   const [sortConfig, setSortConfig]   = useState<SortConfig>({ col: null, dir: 'asc' })
   const [searchGlobal, setSearchGlobal]   = useState('')
   const [savedNotif, setSavedNotif]   = useState(false)
@@ -105,8 +107,15 @@ export default function App() {
   const addExtraCol = useCallback((col: ExtraColumn) => {
     setExtraCols(prev => [...prev, col])
     setVisibleCols(prev => [...prev, col.name])
-    if (col.type !== 'formula') setData(prev => prev.map(r => ({ ...r, [col.name]: '' })))
+    if (col.type !== 'formula' && col.type !== 'whatsapp') setData(prev => prev.map(r => ({ ...r, [col.name]: '' })))
     setShowAddExtra(false)
+  }, [])
+
+  const addWhatsAppCol = useCallback((name: string, config: WhatsAppConfig) => {
+    const col: ExtraColumn = { name, type: 'whatsapp', options: null, whatsappConfig: config }
+    setExtraCols(prev => [...prev, col])
+    setVisibleCols(prev => [...prev, name])
+    setShowWhatsApp(false)
   }, [])
 
   const removeExtraCol = useCallback((name: string) => {
@@ -123,6 +132,16 @@ export default function App() {
         const ed = extraCols.find(e => e.name === c)
         if (ed?.type === 'formula' && ed.formula)
           return evaluateFormula(ed.formula, row, headers)
+        if (ed?.type === 'whatsapp' && ed.whatsappConfig) {
+          const { url } = (window as any).__buildWhatsAppUrl?.(row, ed.whatsappConfig, headers) ?? {}
+          // inline import to avoid circular
+          const rawPhone = String(row[ed.whatsappConfig.phoneCol] ?? '')
+          const cleaned = rawPhone.replace(/\D/g, '').replace(/^00/, '').replace(/^0(\d{10})$/, '$1')
+          const phone = cleaned.length <= 10 ? ed.whatsappConfig.defaultCountry + cleaned : cleaned
+          let msg = ed.whatsappConfig.message
+          headers.forEach(h => { msg = msg.replace(new RegExp(`\\{${h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`, 'gi'), String(row[h] ?? '')) })
+          return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`
+        }
         return row[c] ?? ''
       }))
     }
@@ -136,6 +155,7 @@ export default function App() {
   const shownCols = useMemo(() => allCols.filter(c => visibleCols.includes(c)), [allCols, visibleCols])
   const activeFilterCount = Object.values(filters).filter(v => v && v !== '__all__').length
   const formulaCount = extraCols.filter(c => c.type === 'formula').length
+  const waCount = extraCols.filter(c => c.type === 'whatsapp').length
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (loading) {
@@ -204,6 +224,11 @@ export default function App() {
                   ƒ {formulaCount}
                 </span>
               )}
+              {waCount > 0 && (
+                <span style={{ color: '#25D366', marginLeft: 6 }}>
+                  💬 {waCount}
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -263,6 +288,17 @@ export default function App() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
           </svg>
           Add Column
+        </button>
+
+        {/* WhatsApp Column */}
+        <button onClick={() => setShowWhatsApp(true)} style={{
+          ...btnBase,
+          background: '#25D366', color: '#fff', border: 'none', fontWeight: 700,
+        }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          WhatsApp
         </button>
 
         {/* Download */}
@@ -371,7 +407,7 @@ export default function App() {
         <span>{shownCols.length} columns</span>
         {extraCols.length > 0 && (
           <><span>·</span><span style={{ color: 'var(--brand)' }}>
-            {extraCols.length} extra ({formulaCount} formula)
+            {extraCols.length} extra ({formulaCount} formula{waCount > 0 ? `, ${waCount} WA` : ''})
           </span></>
         )}
         {activeFilterCount > 0 && (
@@ -385,6 +421,17 @@ export default function App() {
         <AddColumnModal
           existingNames={allCols} availableHeaders={headers}
           onAdd={addExtraCol} onClose={() => setShowAddExtra(false)}
+        />
+      )}
+
+      {/* ── WhatsApp Column Modal ────────────────────────────────────────── */}
+      {showWhatsApp && (
+        <WhatsAppModal
+          headers={headers}
+          sampleRow={filteredData[0] ?? data[0] ?? null}
+          existingNames={allCols}
+          onAdd={addWhatsAppCol}
+          onClose={() => setShowWhatsApp(false)}
         />
       )}
     </div>
